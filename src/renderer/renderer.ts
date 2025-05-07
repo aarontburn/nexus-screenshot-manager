@@ -24,6 +24,7 @@ if (window.common.args.includes("--dev") &&
     iframe.src = "http://localhost:5173/"
 }
 
+
 function sendToIFrame(eventType: string, ...data: any[]) {
     iframe.contentWindow.postMessage({ eventType: eventType, data: data }, "*");
 }

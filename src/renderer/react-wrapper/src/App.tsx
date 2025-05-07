@@ -1,59 +1,164 @@
 import { useEffect, useState } from 'react'
 import './App.css'
-import { addProcessListener, sendToProcess } from './ModulesBridge';
+import { addProcessListener, sendToProcess } from './nexus-bridge';
+import { RowsPhotoAlbum } from "react-photo-album"
+import "react-photo-album/rows.css"
+import { getImageDimensions } from './utils/image';
+import ImageOverlay from './components/ImageOverlay';
 
+
+export interface ImageDetails {
+    path: string;
+    fileName: string;
+    base64: string;
+    width: number;
+    height: number;
+}
 
 function App() {
-    const [count, setCount] = useState(0);
-    const [isSampleSettingOn, setSampleSetting] = useState(false);
+    const [pathsMap, setPathsMap] = useState<{ [path: string]: ImageDetails }>({});
+    const [mostRecentImage, setMostRecentImage] = useState<ImageDetails | undefined>(undefined);
+    const [directory, setDirectory] = useState<string>('');
 
     useEffect(() => {
         const listener = addProcessListener((eventType: string, data: any[]) => {
+
             switch (eventType) {
-                case "sample-setting": {
-                    setSampleSetting(data[0]);
-                    break;
-                }
                 case "accent-color-changed": {
-                    console.log(data[0])
                     document.documentElement.style.cssText = "--accent-color: " + data[0];
                     break;
                 }
+
+                case 'directory': {
+                    setDirectory(data[0]);
+                    break;
+                }
+
+                case "initial-file": {
+                    const { path, base64 } = data[0] as ImageDetails;
+                    getImageDimensions(base64).then(({ w, h }) => {
+                        setPathsMap(prev => ({
+                            [path]: { ...data[0], width: w, height: h },
+                            ...prev,
+                        }));
+                    }).catch(error => sendToProcess(error));
+                    break;
+                }
+
+                case 'file-created': {
+                    const { path, base64 } = data[0] as ImageDetails;
+                    getImageDimensions(base64).then(({ w, h }) => {
+                        const image = { ...data[0], width: w, height: h };
+                        setPathsMap(prev => ({
+                            [path]: image,
+                            ...prev
+                        }));
+                        setMostRecentImage(_prev => {
+                            return image;
+                        });
+                    });
+                    break;
+                }
+
+                case 'file-deleted': {
+                    const { path } = data[0];
+                    setPathsMap(prev => {
+                        const updated = { ...prev };
+                        delete updated[path];
+                        return updated;
+                    });
+                    break;
+                }
+
                 default: {
                     console.log("Uncaught message: " + eventType + " | " + data)
                     break;
                 }
             }
         });
+
         sendToProcess("init");
 
         return () => window.removeEventListener("message", listener);
     }, []);
 
+    const onImageHover = (target: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+        const imagePath: string = (target.target as HTMLImageElement).title
+        const element: HTMLElement | null = document.getElementById(imagePath + "-overlay");
+        if (element) {
+            element.classList.add("visible")
+        }
+    }
+
+    const onImageExit = () => {
+        Array.from(document.getElementsByClassName("visible")).forEach(e => e.classList.remove("visible"))
+    }
 
     return (
         <>
-            <div style={{ display: "flex", justifyContent: "center" }}>
-                <a href="https://github.com/aarontburn/nexus-core" target="_blank"
-                    style={{ width: "fit-content" }}>
-                    <div className="logo nexus"></div>
-                </a>
+            <div id='recent-image'>
+                <h2>Last Taken Screenshot</h2>
+
+                {!mostRecentImage && <>
+                    <p>Your last taken screenshot will appear here.</p>
+                </>}
+
+                {mostRecentImage && <>
+                    <img src={'data:image/png;base64,' + mostRecentImage.base64}
+                    ></img>
+                    <div id='recent-image-control'>
+                        <div
+                            onClick={() => {
+                                setMostRecentImage(undefined)
+                                sendToProcess('trash-button', mostRecentImage.path)
+                            }}
+                            className="icon image-option trash-icon">
+                        </div>
+
+                        <div
+                            onClick={(() => sendToProcess('copy-button', mostRecentImage.path))}
+                            className="icon image-option copy-icon">
+                        </div>
+
+                        <div
+                            onClick={(() => sendToProcess('external-button', mostRecentImage.path))}
+                            className="icon image-option external-icon">
+                        </div>
+                    </div>
+                </>}
             </div>
-            <h1><b>Nexus</b></h1>
-            <h1>Sample React App</h1>
-            <p>Sample setting is <b>{isSampleSettingOn ? "on" : "off"}</b>. Visit the <b>Settings</b> module to change it.</p>
-            <div className="card">
-                <button onClick={() => setCount((count) => count + 1)}>
-                    count is {count}
-                </button>
-                <br />
-                <br />
-                <button onClick={() => sendToProcess("count", count)}>
-                    Send <b>count</b> to process
-                </button>
-                <p>
-                    Edit <code>src/App.tsx</code> and save to test HMR
-                </p>
+
+
+            <div id='library-header'>
+                <div style={{ display: "flex", alignContent: "center", justifyContent: "center", alignItems: "center" }}>
+                    <div id='folder-icon' className='icon' onClick={() => sendToProcess("open-folder")}></div>
+                    <h2>{directory || 'Library'}</h2>
+                </div>
+
+                <button onClick={(() => sendToProcess("empty-folder"))}>Empty Folder</button>
+            </div>
+
+            <div id='album-container'>
+                {Object.keys(pathsMap).length === 0 && <>
+                    <p>No images found.</p>
+                </>}
+
+                <RowsPhotoAlbum
+                    render={{
+                        extras: (_, context) => <>
+                            <ImageOverlay imagePath={context.photo.title} />
+                        </>
+                    }}
+                    rowConstraints={{ singleRowMaxHeight: 600 }}
+                    componentsProps={() => ({
+                        wrapper: { onMouseEnter: onImageHover, onMouseLeave: onImageExit },
+                    })}
+                    photos={Object.values(pathsMap).map(details => ({
+                        src: 'data:image/png;base64,' + details.base64,
+                        width: details.width,
+                        height: details.height,
+                        title: details.path
+                    }))} />
             </div>
         </>
     )
