@@ -3,7 +3,11 @@
     "author": "developer",
     "version": "1.0.0",
     "description": "A template to create a module for Nexus using React.",
-    "build_version": 1,
+    "build_version": 2,
     "link": "https://github.com/aarontburn/nexus-template-react",
-    "platforms": ["win32", "linux", "darwin"]
+    "platforms": [
+        "win32",
+        "linux",
+        "darwin"
+    ]
 }

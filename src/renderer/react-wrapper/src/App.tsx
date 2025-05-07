@@ -45,7 +45,7 @@ function App() {
                             [path]: { ...data[0], width: w, height: h },
                             ...prev,
                         }));
-                    }).catch(error => sendToProcess(error));
+                    });
                     break;
                 }
 
@@ -87,7 +87,7 @@ function App() {
     }, []);
 
     const onImageHover = (target: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-        const imagePath: string = (target.target as HTMLImageElement).title
+        const imagePath: string = (target.target as HTMLImageElement).title;
         const element: HTMLElement | null = document.getElementById(imagePath + "-overlay");
         if (element) {
             element.classList.add("visible-image");
@@ -99,13 +99,13 @@ function App() {
             .forEach(e => e.classList.remove("visible-image"));
     }
 
-    const onImageTrashed = (_path: string) => {
-        setAlertText(`Moved ${_path} to the recycle bin.`);
+    const onImageTrashed = (path: string) => {
+        setAlertText(`Moved ${path} to the recycle bin.`);
         forceUpdate();
     }
 
-    const onImageCopied = (_path: string) => {
-        setAlertText(`Copied ${_path} to clipboard.`);
+    const onImageCopied = (path: string) => {
+        setAlertText(`Copied ${path} to clipboard.`);
         forceUpdate();
     }
 
