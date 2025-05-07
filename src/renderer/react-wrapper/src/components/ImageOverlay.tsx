@@ -1,19 +1,27 @@
 import { sendToProcess } from "../nexus-bridge"
 
 export interface ImageOverlayProps {
-    imagePath: string
+    imagePath: string,
+    onImageTrashed: (path: string) => void;
+    onImageCopied: (path: string) => void;
 }
 
 
-export default function ImageOverlay({ imagePath }: ImageOverlayProps) {
+export default function ImageOverlay({ imagePath, onImageTrashed, onImageCopied }: ImageOverlayProps) {
     return <div className={`image-overlay`} id={`${imagePath}-overlay`}>
         <div
-            onClick={(() => sendToProcess('trash-button', imagePath))}
+            onClick={() => {
+                onImageTrashed(imagePath);
+                sendToProcess('trash-button', imagePath)
+            }}
             className="icon image-option trash-icon">
         </div>
 
         <div
-            onClick={(() => sendToProcess('copy-button', imagePath))}
+            onClick={() => {
+                onImageCopied(imagePath);
+                sendToProcess('copy-button', imagePath);
+            }}
             className="icon image-option copy-icon">
         </div>
 

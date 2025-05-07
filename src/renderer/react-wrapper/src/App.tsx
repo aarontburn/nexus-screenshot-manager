@@ -5,6 +5,7 @@ import { RowsPhotoAlbum } from "react-photo-album"
 import "react-photo-album/rows.css"
 import { getImageDimensions } from './utils/image';
 import ImageOverlay from './components/ImageOverlay';
+import Alert from './components/Notification';
 
 
 export interface ImageDetails {
@@ -20,9 +21,12 @@ function App() {
     const [mostRecentImage, setMostRecentImage] = useState<ImageDetails | undefined>(undefined);
     const [directory, setDirectory] = useState<string>('');
 
+    const [alertText, setAlertText] = useState<string>('');
+    const [version, setVersion] = useState(0);
+    const forceUpdate = () => setVersion(v => v + 1);
+
     useEffect(() => {
         const listener = addProcessListener((eventType: string, data: any[]) => {
-
             switch (eventType) {
                 case "accent-color-changed": {
                     document.documentElement.style.cssText = "--accent-color: " + data[0];
@@ -86,16 +90,31 @@ function App() {
         const imagePath: string = (target.target as HTMLImageElement).title
         const element: HTMLElement | null = document.getElementById(imagePath + "-overlay");
         if (element) {
-            element.classList.add("visible")
+            element.classList.add("visible-image");
         }
     }
 
     const onImageExit = () => {
-        Array.from(document.getElementsByClassName("visible")).forEach(e => e.classList.remove("visible"))
+        Array.from(document.getElementsByClassName("visible-image"))
+            .forEach(e => e.classList.remove("visible-image"));
+    }
+
+    const onImageTrashed = (_path: string) => {
+        setAlertText(`Moved ${_path} to the recycle bin.`);
+        forceUpdate();
+    }
+
+    const onImageCopied = (_path: string) => {
+        setAlertText(`Copied ${_path} to clipboard.`);
+        forceUpdate();
     }
 
     return (
         <>
+            <div id='notification-area'>
+                <Alert key={version} text={alertText} />
+            </div>
+
             <div id='recent-image'>
                 <h2>Last Taken Screenshot</h2>
 
@@ -109,14 +128,18 @@ function App() {
                     <div id='recent-image-control'>
                         <div
                             onClick={() => {
-                                setMostRecentImage(undefined)
-                                sendToProcess('trash-button', mostRecentImage.path)
+                                setMostRecentImage(undefined);
+                                onImageTrashed(mostRecentImage.path);
+                                sendToProcess('trash-button', mostRecentImage.path);
                             }}
                             className="icon image-option trash-icon">
                         </div>
 
                         <div
-                            onClick={(() => sendToProcess('copy-button', mostRecentImage.path))}
+                            onClick={(() => {
+                                onImageCopied(mostRecentImage.path);
+                                sendToProcess('copy-button', mostRecentImage.path)
+                            })}
                             className="icon image-option copy-icon">
                         </div>
 
@@ -146,7 +169,7 @@ function App() {
                 <RowsPhotoAlbum
                     render={{
                         extras: (_, context) => <>
-                            <ImageOverlay imagePath={context.photo.title} />
+                            <ImageOverlay imagePath={context.photo.title} onImageCopied={onImageCopied} onImageTrashed={onImageTrashed} />
                         </>
                     }}
                     rowConstraints={{ singleRowMaxHeight: 600 }}

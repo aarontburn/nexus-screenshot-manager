@@ -110,15 +110,11 @@ h2 {
     background-color: var(--accent-color);
 }
 
-.visible {
+.visible-image {
     opacity: 1;
     pointer-events: all;
 }
 
-.invisible {
-    opacity: 0;
-    pointer-events: none;
-}
 
 #recent-image-control {
     display: flex; 
@@ -133,3 +129,28 @@ h2 {
 #recent-image-control > div:hover {
     background-color: var(--accent-color)
 }
+
+#notification-area {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 9999;
+    display: flex;
+    align-items: center ;
+    display: flex;
+    flex-direction: column;
+}
+
+
+
+.notification {
+    background-color: rgb(83, 83, 83);
+    width: fit-content;
+    padding: 0.5em 1em;
+    margin-bottom: 1em;
+    border-radius: 10px;
+    transition: 0.35s;
+    color: white
+}
+
