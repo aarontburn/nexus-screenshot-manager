@@ -1,7 +1,7 @@
 {
     "name": "Screenshot Manager",
     "id": "aarontburn.Screenshot_Manager",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "author": "aarontburn",
     "description": "A screenshot manager module for Nexus.",
     "link": "https://github.com/aarontburn/nexus-screenshot-manager",
@@ -10,6 +10,10 @@
         "linux",
         "darwin"
     ],
+    "git-latest": {
+        "git-username": "aarontburn",
+        "git-repo-name": "nexus-screenshot-manager"
+    },
     "build": {
         "build-version": 3,
         "excluded": [
