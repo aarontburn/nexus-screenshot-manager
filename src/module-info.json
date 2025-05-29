@@ -1,8 +1,9 @@
 {
     "name": "Screenshot Manager",
     "id": "aarontburn.Screenshot_Manager",
-    "version": "1.0.1",
+    "version": "1.0.3",
     "author": "aarontburn",
+    "author-id": "683193056e5989838dcf772c",
     "description": "A screenshot manager module for Nexus.",
     "link": "https://github.com/aarontburn/nexus-screenshot-manager",
     "platforms": [
@@ -15,7 +16,7 @@
         "git-repo-name": "nexus-screenshot-manager"
     },
     "build": {
-        "build-version": 3,
+        "build-version": 5,
         "excluded": [
             "electron.ts",
             "./renderer/react-wrapper"
